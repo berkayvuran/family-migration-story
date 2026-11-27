@@ -18,6 +18,15 @@ HEAD = {"Sıra": "sira", "C": "sex", "Yakınlık Derecesi": "rel", "Adı": "give
 STEP = {"babasının": "F", "babası": "F", "annesinin": "M", "annesi": "M", "oğlunun": "S", "oğlu": "S",
         "kızının": "D", "kızı": "D", "kendisi": ""}
 DATE = re.compile(r"^(\d{2})/(\d{2})/(\d{4})$")
+# A PDF saved with the browser's "Print" carries the browser's header (date-time, page title) and footer
+# (URL, page counter) on every page. They sit outside the table but can still be assigned to a cell:
+# the URL ended up in front of a given name. Table dates never carry a time, so the timestamp pattern
+# ("11/27/26, 1:18 PM", "27.11.2026 13:18") cannot match a cell.
+PRINT_MARGIN = re.compile(
+    r"^(https?://\S+"
+    r"|\d{1,2}[./]\d{1,2}[./]\d{2,4},?\s+\d{1,2}:\d{2}(\s?[AP]M)?"
+    r"|\d+\s?/\s?\d+"
+    r"|.* - Alt-Üst Soy Bilgisi Sorgulama)$", re.I)
 
 
 def head_key(t):
@@ -48,7 +57,7 @@ def runs(page):
     out = []
     def v(text, cm, tm, fd, fs):
         t = text.strip()
-        if t:
+        if t and not PRINT_MARGIN.match(t):
             size = fs * (abs(tm[0]) or 1)
             out.append({"x": tm[4], "y": tm[5], "cx": tm[4] + width(t, size) / 2, "t": t})
     page.extract_text(visitor_text=v)
