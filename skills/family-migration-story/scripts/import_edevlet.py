@@ -57,11 +57,14 @@ def runs(page):
     out = []
     def v(text, cm, tm, fd, fs):
         t = text.strip()
-        if t and not PRINT_MARGIN.match(t):
+        if t:
             size = fs * (abs(tm[0]) or 1)
             out.append({"x": tm[4], "y": tm[5], "cx": tm[4] + width(t, size) / 2, "t": t})
     page.extract_text(visitor_text=v)
-    return out
+    # Drop the print margins: every run on the line of a recognised header/footer run, because the
+    # browser draws the page counter as separate runs ("2", "/", "5") that are meaningless alone.
+    margin_y = {round(r["y"]) for r in out if PRINT_MARGIN.match(r["t"])}
+    return [r for r in out if round(r["y"]) not in margin_y]
 
 
 def parse_date(s):
